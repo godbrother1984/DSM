@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug API Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; margin: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn.success { background: #28a745; }
+        .result { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 4px; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #f8fff8; }
+        .error { border-left-color: #dc3545; background: #fff8f8; }
+        .debug { background: #fff3cd; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #ffc107; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .url-info { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug API Test - Path Fix Version</h1>
+        <p>This version shows debug info to see exactly how paths are processed</p>
+        
+        <div class="url-info">
+            <strong>Base URL:</strong> <span id="baseUrl"></span><br>
+            <strong>API URL:</strong> <span id="apiUrl"></span><br>
+            <strong>Current Page:</strong> <span id="currentPage"></span>
+        </div>
+        
+        <button class="btn" onclick="testEndpoint('')">🏠 Test API Root</button>
+        <button class="btn" onclick="testEndpoint('content')">📁 Test Content</button>
+        <button class="btn" onclick="testEndpoint('player/playlist')">📋 Test Playlist</button>
+        <button class="btn" onclick="testEndpoint('player/register', 'POST')">📱 Test Register</button>
+        <button class="btn success" onclick="runAllTests()">🚀 Run All Tests</button>
+        <button class="btn" onclick="clearResults()">🗑️ Clear</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const currentUrl = window.location.href;
+        const baseUrl = window.location.origin + window.location.pathname.replace("path-fix-api.php", "").replace("debug-test.html", "");
+        const apiUrl = baseUrl + "api/";
+        
+        document.getElementById("baseUrl").textContent = baseUrl;
+        document.getElementById("apiUrl").textContent = apiUrl;
+        document.getElementById("currentPage").textContent = currentUrl;
+        
+        function clearResults() {
+            document.getElementById("results").innerHTML = "";
+        }
+        
+        async function testEndpoint(endpoint, method = "GET") {
+            const url = apiUrl + endpoint;
+            const resultsDiv = document.getElementById("results");
+            
+            // Show loading
+            const loadingDiv = document.createElement("div");
+            loadingDiv.className = "result";
+            loadingDiv.innerHTML = `
+                <h3>Testing: ${method} /${endpoint}</h3>
+                <div class="debug">
+                    <strong>Full URL:</strong> ${url}<br>
+                    <strong>Method:</strong> ${method}<br>
+                    <strong>Time:</strong> ${new Date().toLocaleTimeString()}
+                </div>
+                <p>⏳ Loading...</p>
+            `;
+            resultsDiv.appendChild(loadingDiv);
+            
+            try {
+                const options = { method };
+                if (method === "POST") {
+                    options.headers = { "Content-Type": "application/json" };
+                    options.body = JSON.stringify({ 
+                        device_id: "test-" + Date.now(),
+                        name: "Test Device"
+                    });
+                }
+                
+                const response = await fetch(url, options);
+                const responseText = await response.text();
+                
+                let resultHtml = `<h3>${response.ok ? "✅" : "❌"} ${method} /${endpoint}</h3>`;
+                
+                resultHtml += `<div class="debug">
+                    <strong>Full URL:</strong> ${url}<br>
+                    <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                    <strong>Content-Type:</strong> ${response.headers.get("content-type")}<br>
+                    <strong>Response Size:</strong> ${responseText.length} bytes
+                </div>`;
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    
+                    // Show debug info if available
+                    if (data.data && data.data.debug_info) {
+                        resultHtml += `<div class="debug">
+                            <strong>Debug Info:</strong><br>
+                            Original URI: ${data.data.debug_info.original_uri}<br>
+                            Processed Path: ${data.data.debug_info.processed_path}<br>
+                            Method: ${data.data.debug_info.method}
+                        </div>`;
+                    }
+                    
+                    resultHtml += `<h4>JSON Response:</h4><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    loadingDiv.className = data.success ? "result success" : "result error";
+                } catch (jsonError) {
+                    resultHtml += `<h4>❌ JSON Parse Error:</h4><p>${jsonError.message}</p>`;
+                    resultHtml += `<h4>Raw Response:</h4><pre>${responseText.substring(0, 1000)}</pre>`;
+                    loadingDiv.className = "result error";
+                }
+                
+                loadingDiv.innerHTML = resultHtml;
+                
+            } catch (fetchError) {
+                loadingDiv.innerHTML = `
+                    <h3>❌ Network Error: ${method} /${endpoint}</h3>
+                    <div class="debug">
+                        <strong>URL:</strong> ${url}<br>
+                        <strong>Error:</strong> ${fetchError.message}
+                    </div>
+                `;
+                loadingDiv.className = "result error";
+            }
+            
+            // Scroll to result
+            loadingDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "<h3>🚀 Running all tests with debug info...</h3>";
+            
+            await testEndpoint("");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testEndpoint("content");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testEndpoint("player/playlist");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testEndpoint("player/register", "POST");
+            
+            // Add summary
+            setTimeout(() => {
+                const summaryDiv = document.createElement("div");
+                summaryDiv.className = "result success";
+                summaryDiv.innerHTML = `
+                    <h3>✅ All Tests Completed</h3>
+                    <p>Check the debug info above to see how paths are processed.</p>
+                    <p>If endpoints show "not found", check the processed path in debug info.</p>
+                `;
+                resultsDiv.appendChild(summaryDiv);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

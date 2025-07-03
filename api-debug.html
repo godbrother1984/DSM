@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test - Debug Version</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; margin: 5px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #0056b3; }
+        .result { background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 4px; border: 1px solid #ddd; max-height: 400px; overflow-y: auto; }
+        .result.success { border-color: #28a745; background: #f8fff8; }
+        .result.error { border-color: #dc3545; background: #fff8f8; }
+        .debug { font-family: monospace; font-size: 12px; color: #666; }
+        .url { background: #e9ecef; padding: 8px; margin: 5px 0; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 API Debug Test</h1>
+        <p>This will show exactly what the API returns</p>
+        
+        <div class="url" id="baseUrl">Base URL: Loading...</div>
+        
+        <button class="btn" onclick="testAPI('')">🏠 Test API Root</button>
+        <button class="btn" onclick="testAPI('content')">📁 Test Content</button>
+        <button class="btn" onclick="testAPI('player/playlist')">📋 Test Playlist</button>
+        <button class="btn" onclick="testAPI('player/register', 'POST')">📱 Test Register</button>
+        <button class="btn" onclick="checkAPI()">🔍 Check API File</button>
+        
+        <div id="result" class="result">
+            <h3>Ready to test</h3>
+            <p>Click any button above to test the API</p>
+        </div>
+        
+        <div class="debug">
+            <h4>Debug Info:</h4>
+            <div id="debugInfo">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin + window.location.pathname.replace("ultra-simple-api.php", "").replace("api-debug.html", "");
+        document.getElementById("baseUrl").textContent = "Base URL: " + baseUrl;
+        
+        async function testAPI(endpoint, method = "GET") {
+            const result = document.getElementById("result");
+            const url = baseUrl + "api/" + endpoint;
+            
+            result.innerHTML = `
+                <h3>Testing: ${method} ${url}</h3>
+                <p>⏳ Loading...</p>
+            `;
+            result.className = "result";
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                };
+                
+                if (method === "POST") {
+                    options.body = JSON.stringify({
+                        device_id: "test-device-" + Date.now(),
+                        name: "Test Device"
+                    });
+                }
+                
+                const response = await fetch(url, options);
+                const responseText = await response.text();
+                
+                // แสดง response ดิบก่อน
+                console.log("Raw response:", responseText);
+                
+                // ลองแปลง JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    result.innerHTML = `
+                        <h3>✅ Success: ${method} ${url}</h3>
+                        <div class="debug">
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Content-Type:</strong> ${response.headers.get("content-type")}<br>
+                            <strong>Raw Response Length:</strong> ${responseText.length} chars
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    result.className = "result success";
+                } catch (jsonError) {
+                    result.innerHTML = `
+                        <h3>❌ JSON Parse Error</h3>
+                        <div class="debug">
+                            <strong>URL:</strong> ${url}<br>
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Content-Type:</strong> ${response.headers.get("content-type")}<br>
+                            <strong>JSON Error:</strong> ${jsonError.message}
+                        </div>
+                        <h4>Raw Response:</h4>
+                        <pre>${responseText}</pre>
+                    `;
+                    result.className = "result error";
+                }
+                
+            } catch (fetchError) {
+                result.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <div class="debug">
+                        <strong>URL:</strong> ${url}<br>
+                        <strong>Error:</strong> ${fetchError.message}
+                    </div>
+                `;
+                result.className = "result error";
+            }
+        }
+        
+        async function checkAPI() {
+            const result = document.getElementById("result");
+            result.innerHTML = "<h3>🔍 Checking API file...</h3>";
+            
+            // ตรวจสอบว่าไฟล์ API มีอยู่ไหม
+            try {
+                const response = await fetch(baseUrl + "api/index.php");
+                const text = await response.text();
+                
+                if (text.includes("<?php")) {
+                    result.innerHTML = `
+                        <h3>✅ API file exists</h3>
+                        <p>File size: ${text.length} bytes</p>
+                        <p>Contains PHP code: Yes</p>
+                        <p>Now test the endpoints above</p>
+                    `;
+                    result.className = "result success";
+                } else {
+                    result.innerHTML = `
+                        <h3>❌ API file problem</h3>
+                        <p>The file exists but may not contain proper PHP code</p>
+                        <pre>${text.substring(0, 500)}...</pre>
+                    `;
+                    result.className = "result error";
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ Cannot access API file</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>Make sure api/index.php exists</p>
+                `;
+                result.className = "result error";
+            }
+        }
+        
+        // Update debug info
+        document.getElementById("debugInfo").innerHTML = `
+            <strong>Current URL:</strong> ${window.location.href}<br>
+            <strong>Expected API URL:</strong> ${baseUrl}api/<br>
+            <strong>User Agent:</strong> ${navigator.userAgent.substring(0, 50)}...<br>
+            <strong>Time:</strong> ${new Date().toLocaleString()}
+        `;
+    </script>
+</body>
+</html>
