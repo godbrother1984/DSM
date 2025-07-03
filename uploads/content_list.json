@@ -1,0 +1,22 @@
+[
+    {
+        "id": 4663,
+        "title": "Untitled Diagram (1)",
+        "type": "image",
+        "file_url": "\/DSM\/uploads\/content\/68661d16d623e_1751522582.jpg",
+        "file_size": 15520,
+        "mime_type": "image\/jpeg",
+        "status": "active",
+        "created_at": "2025-07-03 08:03:02"
+    },
+    {
+        "id": 5390,
+        "title": "TN 3308",
+        "type": "image",
+        "file_url": "\/DSM\/uploads\/content\/6866452dcf301_1751532845.jpg",
+        "file_size": 647929,
+        "mime_type": "image\/jpeg",
+        "status": "active",
+        "created_at": "2025-07-03 10:54:05"
+    }
+]

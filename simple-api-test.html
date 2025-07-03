@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple API Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; margin: 5px; cursor: pointer; }
+        .result { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #f8fff8; }
+        .error { border-left-color: #dc3545; background: #fff8f8; }
+        .path-info { background: #e9ecef; padding: 15px; margin: 15px 0; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Simple API Test</h1>
+        
+        <div class="path-info">
+            <strong>Path Detection:</strong><br>
+            <span id="current-path">Current: Loading...</span><br>
+            <span id="detected-api">Detected API: Loading...</span>
+        </div>
+        
+        <button class="btn" onclick="testPath('/api/')">Test /api/</button>
+        <button class="btn" onclick="testPath('/dsm/api/')">Test /dsm/api/</button>
+        <button class="btn" onclick="testPath(getDetectedPath())">Test Detected Path</button>
+        <button class="btn" onclick="testAllPaths()">Test All Possible Paths</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function getDetectedPath() {
+            const currentPath = window.location.pathname;
+            if (currentPath.includes("/dsm/")) {
+                return "/dsm/api/";
+            }
+            return "/api/";
+        }
+        
+        function updatePathInfo() {
+            document.getElementById("current-path").textContent = "Current: " + window.location.pathname;
+            document.getElementById("detected-api").textContent = "Detected API: " + getDetectedPath();
+        }
+        
+        async function testPath(apiPath) {
+            const resultsDiv = document.getElementById("results");
+            const testUrl = apiPath + "content";
+            
+            const resultDiv = document.createElement("div");
+            resultDiv.className = "result";
+            resultDiv.innerHTML = `<strong>Testing:</strong> ${testUrl}<br>⏳ Loading...`;
+            resultsDiv.appendChild(resultDiv);
+            
+            try {
+                const response = await fetch(testUrl);
+                const responseText = await response.text();
+                
+                let resultText = `<strong>Testing:</strong> ${testUrl}<br>`;
+                resultText += `<strong>Status:</strong> ${response.status} ${response.statusText}<br>`;
+                resultText += `<strong>Content-Type:</strong> ${response.headers.get("content-type")}<br>`;
+                
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        if (data.success) {
+                            resultText += `<strong>Result:</strong> ✅ SUCCESS - Valid JSON response<br>`;
+                            resultText += `<strong>Message:</strong> ${data.message}`;
+                            resultDiv.className = "result success";
+                        } else {
+                            resultText += `<strong>Result:</strong> ⚠️ JSON but error - ${data.message}`;
+                            resultDiv.className = "result error";
+                        }
+                    } catch (jsonError) {
+                        resultText += `<strong>Result:</strong> ❌ Non-JSON response<br>`;
+                        resultText += `<strong>Response:</strong> ${responseText.substring(0, 100)}...`;
+                        resultDiv.className = "result error";
+                    }
+                } else {
+                    resultText += `<strong>Result:</strong> ❌ HTTP Error<br>`;
+                    resultText += `<strong>Response:</strong> ${responseText.substring(0, 100)}...`;
+                    resultDiv.className = "result error";
+                }
+                
+                resultDiv.innerHTML = resultText;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>Testing:</strong> ${testUrl}<br><strong>Result:</strong> ❌ Network Error<br><strong>Error:</strong> ${error.message}`;
+                resultDiv.className = "result error";
+            }
+        }
+        
+        async function testAllPaths() {
+            document.getElementById("results").innerHTML = "<h3>Testing All Possible Paths...</h3>";
+            
+            const paths = ["/api/", "/dsm/api/", "../api/", "../../api/"];
+            
+            for (const path of paths) {
+                await testPath(path);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+        
+        document.addEventListener("DOMContentLoaded", updatePathInfo);
+    </script>
+</body>
+</html>

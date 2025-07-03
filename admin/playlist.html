@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlist Management - Digital Signage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            min-height: 600px;
+        }
+
+        .content-library {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .content-library h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+
+        .content-search {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .content-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .content-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            cursor: grab;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .content-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .content-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .content-thumb {
+            width: 40px;
+            height: 40px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .content-info {
+            flex: 1;
+        }
+
+        .content-title {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .content-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .playlist-builder {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .playlist-header h3 {
+            color: #2c3e50;
+            font-size: 18px;
+        }
+
+        .playlist-name {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .drop-zone {
+            min-height: 400px;
+            border: 3px dashed #3498db;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+
+        .drop-zone-empty {
+            text-align: center;
+            color: #7f8c8d;
+        }
+
+        .drop-zone-empty h4 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .playlist-items {
+            width: 100%;
+        }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .playlist-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .item-handle {
+            cursor: grab;
+            color: #95a5a6;
+            font-size: 18px;
+        }
+
+        .item-handle:active {
+            cursor: grabbing;
+        }
+
+        .item-thumb {
+            width: 50px;
+            height: 50px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .item-duration {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .duration-input {
+            width: 60px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .playlist-settings {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .playlist-settings h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .setting-group input,
+        .setting-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .setting-group .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .playlist-stats {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+            font-weight: 600;
+            padding-top: 8px;
+            border-top: 1px solid #bdc3c7;
+        }
+
+        .devices-assignment {
+            margin-top: 20px;
+        }
+
+        .device-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            margin-bottom: 5px;
+        }
+
+        .device-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .device-status.online {
+            background: #27ae60;
+        }
+
+        .device-status.offline {
+            background: #e74c3c;
+        }
+
+        .success-message {
+            background: #d5f4e6;
+            color: #27ae60;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #fce4e4;
+            color: #e74c3c;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>🎬</span>
+                Playlist Management
+            </h1>
+            <div class="nav-buttons">
+                <a href="index.php" class="btn btn-secondary">
+                    <span>🏠</span> Dashboard
+                </a>
+                <a href="content.html" class="btn btn-primary">
+                    <span>📁</span> Content
+                </a>
+                <a href="devices.html" class="btn btn-primary">
+                    <span>📱</span> Devices
+                </a>
+            </div>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            <strong>Success!</strong> <span id="successText"></span>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <strong>Error!</strong> <span id="errorText"></span>
+        </div>
+
+        <div class="main-content">
+            <!-- Content Library -->
+            <div class="content-library">
+                <h3>📚 Content Library</h3>
+                <input type="text" class="content-search" placeholder="Search content..." id="contentSearch">
+                <div class="content-list" id="contentList">
+                    <div class="content-item" draggable="true" data-id="1" data-type="image">
+                        <div class="content-thumb">🖼️</div>
+                        <div class="content-info">
+                            <div class="content-title">Welcome Banner</div>
+                            <div class="content-meta">Image • 1920x1080</div>
+                        </div>
+                    </div>
+                    <div class="content-item" draggable="true" data-id="2" data-type="video">
+                        <div class="content-thumb">🎥</div>
+                        <div class="content-info">
+                            <div class="content-title">Product Demo</div>
+                            <div class="content-meta">Video • 2:30</div>
+                        </div>
+                    </div>
+                    <div class="content-item" draggable="true" data-id="3" data-type="image">
+                        <div class="content-thumb">📊</div>
+                        <div class="content-info">
+                            <div class="content-title">Sales Chart</div>
+                            <div class="content-meta">Image • 1920x1080</div>
+                        </div>
+                    </div>
+                    <div class="content-item" draggable="true" data-id="4" data-type="html">
+                        <div class="content-thumb">🌐</div>
+                        <div class="content-info">
+                            <div class="content-title">Weather Widget</div>
+                            <div class="content-meta">HTML • Interactive</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlist Builder -->
+            <div class="playlist-builder">
+                <div class="playlist-header">
+                    <h3>🎵 Build Playlist</h3>
+                </div>
+                
+                <input type="text" class="playlist-name" placeholder="Enter playlist name..." id="playlistName" value="New Playlist">
+                
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-empty" id="emptyState">
+                        <h4>Drag content here to build your playlist</h4>
+                        <p>Or click "Add All" to include all content</p>
+                        <button class="btn btn-primary" onclick="addAllContent()">
+                            <span>➕</span> Add All Content
+                        </button>
+                    </div>
+                    <div class="playlist-items" id="playlistItems"></div>
+                </div>
+            </div>
+
+            <!-- Playlist Settings -->
+            <div class="playlist-settings">
+                <h3>⚙️ Playlist Settings</h3>
+                
+                <div class="playlist-stats">
+                    <div class="stat-item">
+                        <span>Items:</span>
+                        <span id="itemCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Duration:</span>
+                        <span id="totalDuration">0:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Loop time:</span>
+                        <span id="loopTime">∞</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label>Default Duration (seconds)</label>
+                    <input type="number" id="defaultDuration" value="10" min="1" max="300">
+                </div>
+
+                <div class="setting-group">
+                    <label>Layout Template</label>
+                    <select id="layoutTemplate">
+                        <option value="fullscreen">Full Screen</option>
+                        <option value="grid">Grid Layout</option>
+                        <option value="sidebar">Sidebar Layout</option>
+                        <option value="corporate">Corporate Layout</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="shufflePlaylist">
+                        <label for="shufflePlaylist">Shuffle playlist</label>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="loopPlaylist" checked>
+                        <label for="loopPlaylist">Loop playlist</label>
+                    </div>
+                </div>
+
+                <div class="devices-assignment">
+                    <label>Assign to Devices</label>
+                    <div class="device-list" id="deviceList">
+                        <div class="device-item">
+                            <input type="checkbox" id="device1">
+                            <div class="device-status online"></div>
+                            <label for="device1">Lobby Display</label>
+                        </div>
+                        <div class="device-item">
+                            <input type="checkbox" id="device2">
+                            <div class="device-status online"></div>
+                            <label for="device2">Reception Screen</label>
+                        </div>
+                        <div class="device-item">
+                            <input type="checkbox" id="device3">
+                            <div class="device-status offline"></div>
+                            <label for="device3">Meeting Room</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="savePlaylist()" style="flex: 1;">
+                        <span>💾</span> Save Playlist
+                    </button>
+                    <button class="btn btn-primary" onclick="previewPlaylist()">
+                        <span>👁️</span> Preview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let playlistItems = [];
+        let draggedElement = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadContent();
+            loadDevices();
+            setupDragAndDrop();
+            setupEventListeners();
+        });
+
+        // Load content from API
+        async function loadContent() {
+            try {
+                const response = await fetch('/api/content');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.content) {
+                    displayContent(data.data.content);
+                } else {
+                    console.log('Using demo content');
+                    // Keep demo content as fallback
+                }
+            } catch (error) {
+                console.log('Using demo content due to API error');
+                // Keep demo content as fallback
+            }
+        }
+
+        // Display content in library
+        function displayContent(content) {
+            const contentList = document.getElementById('contentList');
+            contentList.innerHTML = '';
+
+            content.forEach(item => {
+                const contentItem = createContentItem(item);
+                contentList.appendChild(contentItem);
+            });
+
+            // Re-setup drag and drop
+            setupDragAndDrop();
+        }
+
+        // Create content item element
+        function createContentItem(item) {
+            const div = document.createElement('div');
+            div.className = 'content-item';
+            div.draggable = true;
+            div.dataset.id = item.id;
+            div.dataset.type = item.type;
+            div.dataset.title = item.title;
+            div.dataset.duration = item.duration || 10;
+
+            const icon = getContentIcon(item.type);
+            const meta = getContentMeta(item);
+
+            div.innerHTML = `
+                <div class="content-thumb">${icon}</div>
+                <div class="content-info">
+                    <div class="content-title">${item.title}</div>
+                    <div class="content-meta">${meta}</div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Get content icon based on type
+        function getContentIcon(type) {
+            const icons = {
+                'image': '🖼️',
+                'video': '🎥',
+                'audio': '🎵',
+                'html': '🌐',
+                'widget': '🔧',
+                'text': '📝'
+            };
+            return icons[type] || '📄';
+        }
+
+        // Get content metadata
+        function getContentMeta(item) {
+            if (item.type === 'video' && item.duration) {
+                return `Video • ${formatDuration(item.duration)}`;
+            } else if (item.width && item.height) {
+                return `${item.type} • ${item.width}x${item.height}`;
+            } else {
+                return `${item.type} • ${item.file_size ? formatFileSize(item.file_size) : 'Unknown size'}`;
+            }
+        }
+
+        // Load devices from API
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.devices) {
+                    displayDevices(data.data.devices);
+                }
+            } catch (error) {
+                console.log('Using demo devices due to API error');
+                // Keep demo devices as fallback
+            }
+        }
+
+        // Display devices
+        function displayDevices(devices) {
+            const deviceList = document.getElementById('deviceList');
+            deviceList.innerHTML = '';
+
+            devices.forEach(device => {
+                const deviceItem = createDeviceItem(device);
+                deviceList.appendChild(deviceItem);
+            });
+        }
+
+        // Create device item element
+        function createDeviceItem(device) {
+            const div = document.createElement('div');
+            div.className = 'device-item';
+
+            const statusClass = device.status === 'online' ? 'online' : 'offline';
+            
+            div.innerHTML = `
+                <input type="checkbox" id="device_${device.id}" value="${device.id}">
+                <div class="device-status ${statusClass}"></div>
+                <label for="device_${device.id}">${device.name}</label>
+            `;
+
+            return div;
+        }
+
+        // Setup drag and drop
+        function setupDragAndDrop() {
+            const contentItems = document.querySelectorAll('.content-item');
+            const dropZone = document.getElementById('dropZone');
+
+            contentItems.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+
+            dropZone.addEventListener('dragover', handleDragOver);
+            dropZone.addEventListener('drop', handleDrop);
+            dropZone.addEventListener('dragenter', handleDragEnter);
+            dropZone.addEventListener('dragleave', handleDragLeave);
+        }
+
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            if (!e.relatedTarget || !document.getElementById('dropZone').contains(e.relatedTarget)) {
+                document.getElementById('dropZone').classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('drag-over');
+
+            if (draggedElement) {
+                addToPlaylist(draggedElement);
+            }
+        }
+
+        // Add content to playlist
+        function addToPlaylist(contentElement) {
+            const item = {
+                id: contentElement.dataset.id,
+                type: contentElement.dataset.type,
+                title: contentElement.dataset.title,
+                duration: parseInt(contentElement.dataset.duration) || parseInt(document.getElementById('defaultDuration').value)
+            };
+
+            playlistItems.push(item);
+            updatePlaylistDisplay();
+            updateStats();
+        }
+
+        // Add all content to playlist
+        function addAllContent() {
+            const contentItems = document.querySelectorAll('.content-item');
+            const defaultDuration = parseInt(document.getElementById('defaultDuration').value);
+
+            contentItems.forEach(item => {
+                if (!playlistItems.find(p => p.id === item.dataset.id)) {
+                    const playlistItem = {
+                        id: item.dataset.id,
+                        type: item.dataset.type,
+                        title: item.dataset.title,
+                        duration: parseInt(item.dataset.duration) || defaultDuration
+                    };
+                    playlistItems.push(playlistItem);
+                }
+            });
+
+            updatePlaylistDisplay();
+            updateStats();
+        }
+
+        // Update playlist display
+        function updatePlaylistDisplay() {
+            const emptyState = document.getElementById('emptyState');
+            const playlistItemsContainer = document.getElementById('playlistItems');
+
+            if (playlistItems.length === 0) {
+                emptyState.style.display = 'block';
+                playlistItemsContainer.innerHTML = '';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            playlistItemsContainer.innerHTML = '';
+
+            playlistItems.forEach((item, index) => {
+                const itemElement = createPlaylistItem(item, index);
+                playlistItemsContainer.appendChild(itemElement);
+            });
+        }
+
+        // Create playlist item element
+        function createPlaylistItem(item, index) {
+            const div = document.createElement('div');
+            div.className = 'playlist-item';
+            div.dataset.index = index;
+
+            const icon = getContentIcon(item.type);
+
+            div.innerHTML = `
+                <div class="item-handle">⋮⋮</div>
+                <div class="item-thumb">${icon}</div>
+                <div class="item-info">
+                    <div class="item-title">${item.title}</div>
+                    <div class="item-duration">
+                        Duration: <input type="number" class="duration-input" value="${item.duration}" min="1" max="300" onchange="updateDuration(${index}, this.value)"> seconds
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-small btn-danger" onclick="removeFromPlaylist(${index})">
+                        🗑️ Remove
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Update item duration
+        function updateDuration(index, newDuration) {
+            playlistItems[index].duration = parseInt(newDuration);
+            updateStats();
+        }
+
+        // Remove from playlist
+        function removeFromPlaylist(index) {
+            playlistItems.splice(index, 1);
+            updatePlaylistDisplay();
+            updateStats();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const itemCount = playlistItems.length;
+            const totalSeconds = playlistItems.reduce((sum, item) => sum + item.duration, 0);
+            const totalDuration = formatDuration(totalSeconds);
+            
+            document.getElementById('itemCount').textContent = itemCount;
+            document.getElementById('totalDuration').textContent = totalDuration;
+            
+            if (document.getElementById('loopPlaylist').checked) {
+                document.getElementById('loopTime').textContent = '∞';
+            } else {
+                document.getElementById('loopTime').textContent = totalDuration;
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('contentSearch').addEventListener('input', filterContent);
+            document.getElementById('defaultDuration').addEventListener('change', updateDefaultDuration);
+        }
+
+        // Filter content
+        function filterContent(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const contentItems = document.querySelectorAll('.content-item');
+
+            contentItems.forEach(item => {
+                const title = item.querySelector('.content-title').textContent.toLowerCase();
+                if (title.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Update default duration for new items
+        function updateDefaultDuration(e) {
+            console.log('Default duration changed to:', e.target.value);
+        }
+
+        // Save playlist
+        async function savePlaylist() {
+            const playlistName = document.getElementById('playlistName').value.trim();
+            
+            if (!playlistName) {
+                showError('Please enter a playlist name');
+                return;
+            }
+
+            if (playlistItems.length === 0) {
+                showError('Please add at least one item to the playlist');
+                return;
+            }
+
+            const playlistData = {
+                name: playlistName,
+                description: `Playlist with ${playlistItems.length} items`,
+                layout_id: getSelectedLayout(),
+                shuffle: document.getElementById('shufflePlaylist').checked,
+                loop: document.getElementById('loopPlaylist').checked,
+                items: playlistItems.map((item, index) => ({
+                    content_id: item.id,
+                    order_index: index,
+                    duration: item.duration,
+                    zone_id: 'main'
+                }))
+            };
+
+            try {
+                const response = await fetch('/api/playlists', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(playlistData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`Playlist "${playlistName}" saved successfully!`);
+                    
+                    // Assign to selected devices
+                    const selectedDevices = getSelectedDevices();
+                    if (selectedDevices.length > 0) {
+                        await assignPlaylistToDevices(result.data.playlist.id, selectedDevices);
+                    }
+                } else {
+                    showError(result.message || 'Failed to save playlist');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                showError('Network error. Playlist saved locally.');
+                
+                // Save to localStorage as fallback
+                const savedPlaylists = JSON.parse(localStorage.getItem('playlists') || '[]');
+                playlistData.id = Date.now();
+                playlistData.created_at = new Date().toISOString();
+                savedPlaylists.push(playlistData);
+                localStorage.setItem('playlists', JSON.stringify(savedPlaylists));
+                showSuccess(`Playlist "${playlistName}" saved locally!`);
+            }
+        }
+
+        // Get selected layout
+        function getSelectedLayout() {
+            const layoutSelect = document.getElementById('layoutTemplate');
+            const layoutMap = {
+                'fullscreen': 1,
+                'grid': 2,
+                'sidebar': 3,
+                'corporate': 4
+            };
+            return layoutMap[layoutSelect.value] || 1;
+        }
+
+        // Get selected devices
+        function getSelectedDevices() {
+            const checkboxes = document.querySelectorAll('#deviceList input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Assign playlist to devices
+        async function assignPlaylistToDevices(playlistId, deviceIds) {
+            try {
+                const promises = deviceIds.map(deviceId => 
+                    fetch('/api/devices/assign', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            device_id: deviceId,
+                            playlist_id: playlistId
+                        })
+                    })
+                );
+
+                await Promise.all(promises);
+                showSuccess(`Playlist assigned to ${deviceIds.length} device(s)`);
+            } catch (error) {
+                console.error('Assignment error:', error);
+                showError('Failed to assign playlist to some devices');
+            }
+        }
+
+        // Preview playlist
+        function previewPlaylist() {
+            if (playlistItems.length === 0) {
+                showError('No items in playlist to preview');
+                return;
+            }
+
+            const previewData = {
+                name: document.getElementById('playlistName').value,
+                items: playlistItems,
+                layout: document.getElementById('layoutTemplate').value,
+                shuffle: document.getElementById('shufflePlaylist').checked
+            };
+
+            // Store preview data
+            localStorage.setItem('previewPlaylist', JSON.stringify(previewData));
+            
+            // Open preview in new window
+            window.open('../player/?preview=true', '_blank');
+        }
+
+        // Utility functions
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+            successText.textContent = message;
+            successDiv.style.display = 'block';
+            
+            // Hide error message if shown
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Hide success message if shown
+            document.getElementById('successMessage').style.display = 'none';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Clear playlist
+        function clearPlaylist() {
+            if (confirm('Are you sure you want to clear the entire playlist?')) {
+                playlistItems = [];
+                updatePlaylistDisplay();
+                updateStats();
+                showSuccess('Playlist cleared');
+            }
+        }
+
+        // Load existing playlist
+        async function loadExistingPlaylist(playlistId) {
+            try {
+                const response = await fetch(`/api/playlists/${playlistId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.playlist) {
+                    const playlist = data.data.playlist;
+                    
+                    // Set playlist name
+                    document.getElementById('playlistName').value = playlist.name;
+                    
+                    // Set settings
+                    document.getElementById('shufflePlaylist').checked = playlist.shuffle;
+                    document.getElementById('loopPlaylist').checked = playlist.loop_count !== 1;
+                    
+                    // Load items
+                    playlistItems = playlist.items.map(item => ({
+                        id: item.content_id,
+                        title: item.title,
+                        type: item.type,
+                        duration: item.duration || item.effective_duration
+                    }));
+                    
+                    updatePlaylistDisplay();
+                    updateStats();
+                    showSuccess(`Loaded playlist: ${playlist.name}`);
+                }
+            } catch (error) {
+                showError('Failed to load playlist');
+            }
+        }
+
+        // Export playlist
+        function exportPlaylist() {
+            if (playlistItems.length === 0) {
+                showError('No playlist to export');
+                return;
+            }
+
+            const playlistData = {
+                name: document.getElementById('playlistName').value,
+                items: playlistItems,
+                settings: {
+                    layout: document.getElementById('layoutTemplate').value,
+                    shuffle: document.getElementById('shufflePlaylist').checked,
+                    loop: document.getElementById('loopPlaylist').checked,
+                    defaultDuration: document.getElementById('defaultDuration').value
+                },
+                exported_at: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(playlistData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `${playlistData.name.replace(/[^a-z0-9]/gi, '_')}.json`;
+            link.click();
+            
+            showSuccess('Playlist exported successfully');
+        }
+
+        // Import playlist
+        function importPlaylist() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const playlistData = JSON.parse(e.target.result);
+                            
+                            if (playlistData.items && Array.isArray(playlistData.items)) {
+                                // Set playlist name
+                                document.getElementById('playlistName').value = playlistData.name || 'Imported Playlist';
+                                
+                                // Set settings if available
+                                if (playlistData.settings) {
+                                    if (playlistData.settings.layout) {
+                                        document.getElementById('layoutTemplate').value = playlistData.settings.layout;
+                                    }
+                                    if (typeof playlistData.settings.shuffle === 'boolean') {
+                                        document.getElementById('shufflePlaylist').checked = playlistData.settings.shuffle;
+                                    }
+                                    if (typeof playlistData.settings.loop === 'boolean') {
+                                        document.getElementById('loopPlaylist').checked = playlistData.settings.loop;
+                                    }
+                                    if (playlistData.settings.defaultDuration) {
+                                        document.getElementById('defaultDuration').value = playlistData.settings.defaultDuration;
+                                    }
+                                }
+                                
+                                // Load items
+                                playlistItems = playlistData.items;
+                                updatePlaylistDisplay();
+                                updateStats();
+                                showSuccess(`Imported playlist: ${playlistData.name}`);
+                            } else {
+                                showError('Invalid playlist file format');
+                            }
+                        } catch (error) {
+                            showError('Failed to parse playlist file');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S or Cmd+S to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                savePlaylist();
+            }
+            
+            // Ctrl+P or Cmd+P to preview
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                previewPlaylist();
+            }
+            
+            // Delete key to remove selected items
+            if (e.key === 'Delete' && document.activeElement.closest('.playlist-item')) {
+                const itemElement = document.activeElement.closest('.playlist-item');
+                const index = parseInt(itemElement.dataset.index);
+                removeFromPlaylist(index);
+            }
+        });
+
+        // Auto-save to localStorage every 30 seconds
+        setInterval(() => {
+            if (playlistItems.length > 0) {
+                const autoSaveData = {
+                    name: document.getElementById('playlistName').value,
+                    items: playlistItems,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('autoSavePlaylist', JSON.stringify(autoSaveData));
+            }
+        }, 30000);
+
+        // Load auto-saved playlist on page load
+        window.addEventListener('load', () => {
+            const autoSaved = localStorage.getItem('autoSavePlaylist');
+            if (autoSaved) {
+                try {
+                    const data = JSON.parse(autoSaved);
+                    const timeDiff = Date.now() - data.timestamp;
+                    
+                    // If auto-save is less than 1 hour old, offer to restore
+                    if (timeDiff < 3600000) {
+                        const restore = confirm(`Found auto-saved playlist "${data.name}". Would you like to restore it?`);
+                        if (restore) {
+                            document.getElementById('playlistName').value = data.name;
+                            playlistItems = data.items;
+                            updatePlaylistDisplay();
+                            updateStats();
+                            showSuccess('Auto-saved playlist restored');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to restore auto-saved playlist:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
