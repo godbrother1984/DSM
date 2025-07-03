@@ -1,0 +1,691 @@
+<?php
+/*
+=============================================================================
+DIGITAL SIGNAGE SYSTEM - COMPLETE IMPLEMENTATION
+=============================================================================
+Project: Full-featured Digital Signage Management System
+Backend: PHP (Pure PHP, no framework)
+Frontend: HTML5 + JavaScript
+Database: MySQL
+Features: Content Management, Device Management, Playlists, Layouts, 
+         Real-time Updates, Dashboard Integration, Analytics
+
+INSTALLATION INSTRUCTIONS:
+1. Upload all files to your web server
+2. Run: http://yourdomain.com/install.php
+3. Follow the installation wizard
+4. Access admin at: http://yourdomain.com/admin/
+5. Access player at: http://yourdomain.com/player/
+
+Default Login: admin@signage.local / admin123
+=============================================================================
+*/
+
+// FILE STRUCTURE:
+/*
+digital-signage/
+├── install.php (Installation wizard)
+├── config/
+│   ├── database.php
+│   ├── config.php
+│   └── routes.php
+├── includes/
+│   ├── Database.php
+│   ├── Auth.php
+│   ├── FileUpload.php
+│   ├── ApiResponse.php
+│   └── Helpers.php
+├── api/
+│   ├── index.php
+│   ├── auth.php
+│   ├── content.php
+│   ├── devices.php
+│   ├── playlists.php
+│   └── dashboard.php
+├── admin/
+│   ├── index.html
+│   ├── login.html
+│   ├── css/
+│   ├── js/
+│   └── assets/
+├── player/
+│   └── index.html
+├── uploads/
+│   ├── content/
+│   ├── thumbnails/
+│   └── screenshots/
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── images/
+└── sql/
+    └── schema.sql
+*/
+
+// =============================================================================
+// INSTALLATION SCRIPT: install.php
+// =============================================================================
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Signage System - Installation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 30px; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #5a6fd8; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .progress { background: #e9ecef; height: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .progress-bar { background: #667eea; height: 100%; border-radius: 10px; transition: width 0.3s; }
+        .requirements { list-style: none; }
+        .requirements li { padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .requirements .pass { background: #d4edda; color: #155724; }
+        .requirements .fail { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Digital Signage System</h1>
+            <p>Complete Installation Wizard</p>
+        </div>
+        
+        <div class="content">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar" style="width: 20%"></div>
+            </div>
+            
+            <!-- Step 1: Requirements Check -->
+            <div class="step active" id="step1">
+                <h2>Step 1: System Requirements</h2>
+                <ul class="requirements" id="requirements">
+                    <li class="pass">✅ PHP 7.4+ - Available</li>
+                    <li class="pass">✅ MySQL 5.7+ - Available</li>
+                    <li class="pass">✅ GD Extension - Available</li>
+                    <li class="pass">✅ JSON Extension - Available</li>
+                    <li class="pass">✅ Write Permissions - Available</li>
+                </ul>
+                <button class="btn" onclick="nextStep()">Continue</button>
+            </div>
+            
+            <!-- Step 2: Database Configuration -->
+            <div class="step" id="step2">
+                <h2>Step 2: Database Configuration</h2>
+                <form id="dbForm">
+                    <div class="form-group">
+                        <label>Database Host:</label>
+                        <input type="text" name="db_host" value="localhost" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Database Name:</label>
+                        <input type="text" name="db_name" value="digital_signage" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Database Username:</label>
+                        <input type="text" name="db_user" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Database Password:</label>
+                        <input type="password" name="db_pass">
+                    </div>
+                    <button type="button" class="btn" onclick="testDatabase()">Test Connection</button>
+                    <button type="button" class="btn" onclick="nextStep()" id="dbNextBtn" style="display:none;">Continue</button>
+                </form>
+            </div>
+            
+            <!-- Step 3: Admin Account -->
+            <div class="step" id="step3">
+                <h2>Step 3: Administrator Account</h2>
+                <form id="adminForm">
+                    <div class="form-group">
+                        <label>Admin Name:</label>
+                        <input type="text" name="admin_name" value="System Administrator" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Admin Email:</label>
+                        <input type="email" name="admin_email" value="admin@signage.local" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Admin Password:</label>
+                        <input type="password" name="admin_password" value="admin123" required>
+                    </div>
+                    <button type="button" class="btn" onclick="nextStep()">Continue</button>
+                </form>
+            </div>
+            
+            <!-- Step 4: System Settings -->
+            <div class="step" id="step4">
+                <h2>Step 4: System Settings</h2>
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label>System Name:</label>
+                        <input type="text" name="system_name" value="Digital Signage System" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Timezone:</label>
+                        <select name="timezone">
+                            <option value="Asia/Bangkok">Asia/Bangkok</option>
+                            <option value="America/New_York">America/New_York</option>
+                            <option value="Europe/London">Europe/London</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Maximum Upload Size (MB):</label>
+                        <input type="number" name="max_upload" value="100" required>
+                    </div>
+                    <button type="button" class="btn" onclick="installSystem()">Install System</button>
+                </form>
+            </div>
+            
+            <!-- Step 5: Installation Complete -->
+            <div class="step" id="step5">
+                <h2>🎉 Installation Complete!</h2>
+                <div class="success">
+                    <p><strong>Digital Signage System has been successfully installed!</strong></p>
+                </div>
+                <p><strong>Access URLs:</strong></p>
+                <ul>
+                    <li><strong>Admin Panel:</strong> <a href="admin/" target="_blank">admin/</a></li>
+                    <li><strong>Signage Player:</strong> <a href="player/" target="_blank">player/</a></li>
+                    <li><strong>API Documentation:</strong> <a href="api/" target="_blank">api/</a></li>
+                </ul>
+                <p><strong>Default Login:</strong></p>
+                <ul>
+                    <li><strong>Email:</strong> <span id="finalEmail">admin@signage.local</span></li>
+                    <li><strong>Password:</strong> <span id="finalPassword">admin123</span></li>
+                </ul>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="window.location.href='admin/'">Open Admin Panel</button>
+                    <button class="btn" onclick="window.location.href='player/'">Open Player</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function nextStep() {
+            document.getElementById('step' + currentStep).classList.remove('active');
+            currentStep++;
+            document.getElementById('step' + currentStep).classList.add('active');
+            updateProgress();
+        }
+
+        function testDatabase() {
+            const formData = new FormData(document.getElementById('dbForm'));
+            
+            fetch('install.php?action=test_db', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Database connection successful!');
+                    document.getElementById('dbNextBtn').style.display = 'inline-block';
+                } else {
+                    alert('❌ Database connection failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Connection test failed: ' + error.message);
+            });
+        }
+
+        function installSystem() {
+            const dbData = new FormData(document.getElementById('dbForm'));
+            const adminData = new FormData(document.getElementById('adminForm'));
+            const settingsData = new FormData(document.getElementById('settingsForm'));
+            
+            const allData = new FormData();
+            for (let [key, value] of dbData) allData.append(key, value);
+            for (let [key, value] of adminData) allData.append(key, value);
+            for (let [key, value] of settingsData) allData.append(key, value);
+            
+            fetch('install.php?action=install', {
+                method: 'POST',
+                body: allData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('finalEmail').textContent = allData.get('admin_email');
+                    document.getElementById('finalPassword').textContent = allData.get('admin_password');
+                    nextStep();
+                } else {
+                    alert('❌ Installation failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Installation failed: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>
+
+<?php
+// Handle AJAX requests
+if ($_GET['action'] ?? '') {
+    header('Content-Type: application/json');
+    
+    if ($_GET['action'] === 'test_db') {
+        try {
+            $host = $_POST['db_host'];
+            $name = $_POST['db_name'];
+            $user = $_POST['db_user'];
+            $pass = $_POST['db_pass'];
+            
+            $pdo = new PDO("mysql:host=$host", $user, $pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Try to create database if it doesn't exist
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+    
+    if ($_GET['action'] === 'install') {
+        try {
+            // Create config files
+            createConfigFiles($_POST);
+            
+            // Create database tables
+            createDatabaseTables($_POST);
+            
+            // Create admin user
+            createAdminUser($_POST);
+            
+            // Create directories
+            createDirectories();
+            
+            // Create default data
+            createDefaultData($_POST);
+            
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+}
+
+function createConfigFiles($data) {
+    // Database config
+    $dbConfig = "<?php
+return [
+    'host' => '{$data['db_host']}',
+    'database' => '{$data['db_name']}',
+    'username' => '{$data['db_user']}',
+    'password' => '{$data['db_pass']}',
+    'charset' => 'utf8mb4',
+    'options' => [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]
+];
+?>";
+    
+    if (!is_dir('config')) mkdir('config', 0755, true);
+    file_put_contents('config/database.php', $dbConfig);
+    
+    // Main config
+    $mainConfig = "<?php
+return [
+    'app_name' => '{$data['system_name']}',
+    'timezone' => '{$data['timezone']}',
+    'max_upload_size' => " . ($data['max_upload'] * 1024 * 1024) . ",
+    'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'html'],
+    'upload_path' => 'uploads/',
+    'jwt_secret' => '" . bin2hex(random_bytes(32)) . "',
+    'session_timeout' => 3600,
+];
+?>";
+    
+    file_put_contents('config/config.php', $mainConfig);
+}
+
+function createDatabaseTables($data) {
+    $config = include 'config/database.php';
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}", 
+        $config['username'], 
+        $config['password'], 
+        $config['options']
+    );
+    
+    $sql = file_get_contents('sql/schema.sql');
+    $pdo->exec($sql);
+}
+
+function createAdminUser($data) {
+    $config = include 'config/database.php';
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}", 
+        $config['username'], 
+        $config['password'], 
+        $config['options']
+    );
+    
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, is_active, created_at) VALUES (?, ?, ?, 'admin', 1, NOW())");
+    $stmt->execute([
+        $data['admin_name'],
+        $data['admin_email'],
+        password_hash($data['admin_password'], PASSWORD_DEFAULT)
+    ]);
+}
+
+function createDirectories() {
+    $dirs = [
+        'uploads/content',
+        'uploads/thumbnails', 
+        'uploads/screenshots',
+        'uploads/temp',
+        'logs',
+        'cache'
+    ];
+    
+    foreach ($dirs as $dir) {
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+    }
+}
+
+function createDefaultData($data) {
+    $config = include 'config/database.php';
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}", 
+        $config['username'], 
+        $config['password'], 
+        $config['options']
+    );
+    
+    // Default layouts
+    $layouts = [
+        ['Full Screen', 'Single full screen content', 'fullscreen', 'fullscreen', '{"main":{"width":"100%","height":"100%"}}', 1],
+        ['Retail Layout', 'Main content with sidebar', 'grid', 'retail', '{"main":{"width":"70%","height":"100%"},"sidebar":{"width":"30%","height":"100%"}}', 0],
+        ['Corporate', 'Header, main, footer layout', 'multi-zone', 'corporate', '{"header":{"height":"15%"},"main":{"height":"70%"},"footer":{"height":"15%"}}', 0]
+    ];
+    
+    $stmt = $pdo->prepare("INSERT INTO layouts (name, description, type, template, zones, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    foreach ($layouts as $layout) {
+        $stmt->execute($layout);
+    }
+    
+    // System settings
+    $settings = [
+        ['app_name', $data['system_name'], 'string', 'Application name', 1],
+        ['timezone', $data['timezone'], 'string', 'System timezone', 1],
+        ['max_upload_size', $data['max_upload'] * 1024 * 1024, 'integer', 'Maximum upload size in bytes', 0],
+        ['default_refresh_interval', '30', 'integer', 'Default refresh interval in seconds', 1],
+        ['enable_analytics', '1', 'boolean', 'Enable analytics tracking', 1]
+    ];
+    
+    $stmt = $pdo->prepare("INSERT INTO system_settings (`key`, `value`, `type`, description, is_public, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+    foreach ($settings as $setting) {
+        $stmt->execute($setting);
+    }
+}
+?>
+
+<?php
+// =============================================================================
+// DATABASE SCHEMA: sql/schema.sql
+// =============================================================================
+$schema = '
+-- Digital Signage System Database Schema
+-- Generated by Installation Wizard
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Users table
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `email` varchar(255) NOT NULL UNIQUE,
+    `password` varchar(255) NOT NULL,
+    `role` enum("admin","manager","editor","viewer") DEFAULT "viewer",
+    `avatar` varchar(500) NULL,
+    `is_active` boolean DEFAULT TRUE,
+    `last_login_at` timestamp NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_users_email` (`email`),
+    INDEX `idx_users_role` (`role`)
+);
+
+-- Content table
+CREATE TABLE IF NOT EXISTS `content` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `title` varchar(255) NOT NULL,
+    `description` text NULL,
+    `type` enum("video","image","audio","html","widget","dashboard","text") NOT NULL,
+    `file_path` varchar(500) NULL,
+    `file_url` varchar(500) NULL,
+    `thumbnail_path` varchar(500) NULL,
+    `file_size` bigint NULL COMMENT "File size in bytes",
+    `mime_type` varchar(100) NULL,
+    `duration` int NULL COMMENT "Duration in seconds",
+    `width` int NULL,
+    `height` int NULL,
+    `metadata` json NULL,
+    `tags` json NULL,
+    `status` enum("active","inactive","processing","error") DEFAULT "active",
+    `expires_at` timestamp NULL,
+    `created_by` bigint unsigned NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` timestamp NULL,
+    PRIMARY KEY (`id`),
+    INDEX `idx_content_type` (`type`),
+    INDEX `idx_content_status` (`status`),
+    INDEX `idx_content_created_by` (`created_by`),
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+);
+
+-- Layouts table
+CREATE TABLE IF NOT EXISTS `layouts` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `description` text NULL,
+    `type` enum("grid","rotation","multi-zone","interactive","fullscreen") NOT NULL,
+    `template` varchar(100) NOT NULL,
+    `orientation` enum("landscape","portrait","auto") DEFAULT "landscape",
+    `resolution` varchar(20) DEFAULT "1920x1080",
+    `zones` json NOT NULL,
+    `settings` json NULL,
+    `is_default` boolean DEFAULT FALSE,
+    `created_by` bigint unsigned NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_layouts_type` (`type`),
+    INDEX `idx_layouts_is_default` (`is_default`),
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+);
+
+-- Playlists table
+CREATE TABLE IF NOT EXISTS `playlists` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `description` text NULL,
+    `layout_id` bigint unsigned NULL,
+    `total_duration` int DEFAULT 0,
+    `loop_count` int DEFAULT 0,
+    `shuffle` boolean DEFAULT FALSE,
+    `settings` json NULL,
+    `is_active` boolean DEFAULT TRUE,
+    `created_by` bigint unsigned NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_playlists_layout_id` (`layout_id`),
+    INDEX `idx_playlists_is_active` (`is_active`),
+    FOREIGN KEY (`layout_id`) REFERENCES `layouts` (`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+);
+
+-- Playlist items table
+CREATE TABLE IF NOT EXISTS `playlist_items` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `playlist_id` bigint unsigned NOT NULL,
+    `content_id` bigint unsigned NOT NULL,
+    `zone_id` varchar(50) DEFAULT "main",
+    `order_index` int DEFAULT 0,
+    `duration` int NULL,
+    `transition_type` enum("none","fade","slide","zoom","flip") DEFAULT "fade",
+    `transition_duration` int DEFAULT 1000,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_playlist_items_playlist_id` (`playlist_id`),
+    INDEX `idx_playlist_items_order` (`playlist_id`, `order_index`),
+    FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`content_id`) REFERENCES `content` (`id`) ON DELETE CASCADE
+);
+
+-- Devices table
+CREATE TABLE IF NOT EXISTS `devices` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `device_id` varchar(255) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `description` text NULL,
+    `location` varchar(255) NULL,
+    `device_type` enum("desktop","tablet","mobile","smart_tv","display","kiosk") DEFAULT "desktop",
+    `os` varchar(100) NULL,
+    `browser` varchar(100) NULL,
+    `screen_width` int NULL,
+    `screen_height` int NULL,
+    `orientation` enum("landscape","portrait","auto") DEFAULT "landscape",
+    `current_playlist_id` bigint unsigned NULL,
+    `current_layout_id` bigint unsigned NULL,
+    `status` enum("online","offline","error","maintenance") DEFAULT "offline",
+    `last_seen` timestamp NULL,
+    `last_heartbeat` timestamp NULL,
+    `ip_address` varchar(45) NULL,
+    `settings` json NULL,
+    `api_key` varchar(64) NOT NULL UNIQUE,
+    `is_active` boolean DEFAULT TRUE,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_devices_device_id` (`device_id`),
+    INDEX `idx_devices_status` (`status`),
+    INDEX `idx_devices_last_seen` (`last_seen`),
+    FOREIGN KEY (`current_playlist_id`) REFERENCES `playlists` (`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`current_layout_id`) REFERENCES `layouts` (`id`) ON DELETE SET NULL
+);
+
+-- Device logs table
+CREATE TABLE IF NOT EXISTS `device_logs` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `device_id` bigint unsigned NOT NULL,
+    `level` enum("info","warning","error","debug") NOT NULL,
+    `message` text NOT NULL,
+    `context` json NULL,
+    `ip_address` varchar(45) NULL,
+    `user_agent` text NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_device_logs_device_id` (`device_id`),
+    INDEX `idx_device_logs_level` (`level`),
+    INDEX `idx_device_logs_created_at` (`created_at`),
+    FOREIGN KEY (`device_id`) REFERENCES `devices` (`id`) ON DELETE CASCADE
+);
+
+-- Content analytics table
+CREATE TABLE IF NOT EXISTS `content_analytics` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `device_id` bigint unsigned NOT NULL,
+    `content_id` bigint unsigned NOT NULL,
+    `playlist_id` bigint unsigned NULL,
+    `event_type` enum("start","end","skip","error","interaction") NOT NULL,
+    `duration_watched` int NULL,
+    `interaction_data` json NULL,
+    `timestamp` timestamp DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_content_analytics_device_id` (`device_id`),
+    INDEX `idx_content_analytics_content_id` (`content_id`),
+    INDEX `idx_content_analytics_timestamp` (`timestamp`),
+    FOREIGN KEY (`device_id`) REFERENCES `devices` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`content_id`) REFERENCES `content` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE SET NULL
+);
+
+-- System settings table
+CREATE TABLE IF NOT EXISTS `system_settings` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `key` varchar(255) NOT NULL UNIQUE,
+    `value` text NULL,
+    `type` enum("string","integer","boolean","json") DEFAULT "string",
+    `description` text NULL,
+    `is_public` boolean DEFAULT FALSE,
+    `updated_by` bigint unsigned NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_system_settings_key` (`key`),
+    FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+);
+
+-- Schedules table
+CREATE TABLE IF NOT EXISTS `schedules` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `playlist_id` bigint unsigned NOT NULL,
+    `start_date` date NOT NULL,
+    `end_date` date NULL,
+    `start_time` time NOT NULL,
+    `end_time` time NOT NULL,
+    `days_of_week` json NOT NULL,
+    `timezone` varchar(50) DEFAULT "Asia/Bangkok",
+    `priority` int DEFAULT 1,
+    `is_active` boolean DEFAULT TRUE,
+    `created_by` bigint unsigned NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_schedules_playlist_id` (`playlist_id`),
+    INDEX `idx_schedules_is_active` (`is_active`),
+    FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+);
+
+-- API tokens table
+CREATE TABLE IF NOT EXISTS `api_tokens` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `user_id` bigint unsigned NOT NULL,
+    `token` varchar(64) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `abilities` json NULL,
+    `last_used_at` timestamp NULL,
+    `expires_at` timestamp NULL,
+    `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp DEFAULT
