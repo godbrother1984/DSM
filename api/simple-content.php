@@ -1,35 +1,15 @@
 <?php
-/*
-=============================================================================
-CONTENT API - JSON Fixed Version
-=============================================================================
-*/
-
-// Prevent PHP errors
-error_reporting(0);
-ini_set("display_errors", 0);
-
-// Clear output buffer
-while (ob_get_level()) {
-    ob_end_clean();
-}
-
-// Set headers
+// Simple Content API - No Dependencies
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    echo json_encode(["status" => "ok"]);
-    exit;
+    exit(json_encode(["status" => "ok"]));
 }
 
-function contentResponse($data, $code = 200) {
-    while (ob_get_level()) {
-        ob_end_clean();
-    }
-    http_response_code($code);
+function sendJSON($data) {
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
 }
@@ -40,7 +20,8 @@ try {
     
     switch ($method) {
         case "GET":
-            contentResponse([
+            // Return demo content
+            sendJSON([
                 "success" => true,
                 "message" => "Content retrieved successfully",
                 "data" => [
@@ -57,7 +38,7 @@ try {
                         [
                             "id" => 2,
                             "title" => "Product Demo Video",
-                            "type" => "video",
+                            "type" => "video", 
                             "duration" => 30,
                             "file_url" => "/demo/product.mp4",
                             "status" => "active",
@@ -80,28 +61,19 @@ try {
                             "file_url" => "/demo/logo.png",
                             "status" => "active",
                             "created_at" => date("Y-m-d H:i:s", strtotime("-3 hours"))
-                        ],
-                        [
-                            "id" => 5,
-                            "title" => "Promotional Text",
-                            "type" => "text",
-                            "duration" => 8,
-                            "file_url" => "Special offers available now!",
-                            "status" => "active",
-                            "created_at" => date("Y-m-d H:i:s", strtotime("-4 hours"))
                         ]
                     ]
-                ],
-                "count" => 5
+                ]
             ]);
             break;
             
         case "POST":
+            // Simulate content creation
             if (empty($input["title"])) {
-                contentResponse([
+                sendJSON([
                     "success" => false,
                     "message" => "Content title is required"
-                ], 400);
+                ]);
             }
             
             $newContent = [
@@ -109,29 +81,31 @@ try {
                 "title" => $input["title"],
                 "type" => $input["type"] ?? "text",
                 "duration" => intval($input["duration"] ?? 10),
-                "file_url" => $input["file_url"] ?? $input["title"],
+                "file_url" => $input["file_url"] ?? "",
                 "status" => "active",
                 "created_at" => date("Y-m-d H:i:s")
             ];
             
-            contentResponse([
+            sendJSON([
                 "success" => true,
-                "message" => "Content created successfully",
-                "data" => ["content" => $newContent]
-            ], 201);
+                "message" => "Content created successfully (demo mode)",
+                "data" => [
+                    "content" => $newContent
+                ]
+            ]);
             break;
             
         default:
-            contentResponse([
+            sendJSON([
                 "success" => false,
                 "message" => "Method not allowed"
-            ], 405);
+            ]);
     }
     
 } catch (Exception $e) {
-    contentResponse([
+    sendJSON([
         "success" => false,
         "message" => "Server error: " . $e->getMessage()
-    ], 500);
+    ]);
 }
 ?>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Emergency Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .test-section h3 { color: #333; margin-top: 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Test - Emergency Fix</h1>
+    
+    <div class="test-section">
+        <h3>🎵 Playlist API Tests</h3>
+        <button onclick="testPlaylistGet()">Test GET Playlists</button>
+        <button onclick="testPlaylistPost()">Test POST Playlist</button>
+        <div id="playlistResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📁 Content API Tests</h3>
+        <button onclick="testContentGet()">Test GET Content</button>
+        <button onclick="testContentPost()">Test POST Content</button>
+        <div id="contentResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔗 Quick Links</h3>
+        <button onclick="openFixedPlaylist()">Open Fixed Playlist Manager</button>
+        <button onclick="openOriginalPlaylist()">Open Original Playlist Manager</button>
+    </div>
+
+    <script>
+        async function testPlaylistGet() {
+            try {
+                const response = await fetch("./api/simple-playlists.php");
+                const result = await response.json();
+                
+                document.getElementById("playlistResult").innerHTML = 
+                    "✅ GET Playlists Test:\n" + JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById("playlistResult").innerHTML = 
+                    "❌ GET Playlists Error:\n" + error.message;
+            }
+        }
+
+        async function testPlaylistPost() {
+            try {
+                const response = await fetch("./api/simple-playlists.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: "Test Playlist " + Date.now(),
+                        description: "Created by API test"
+                    })
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById("playlistResult").innerHTML = 
+                    "✅ POST Playlist Test:\n" + JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById("playlistResult").innerHTML = 
+                    "❌ POST Playlist Error:\n" + error.message;
+            }
+        }
+
+        async function testContentGet() {
+            try {
+                const response = await fetch("./api/simple-content.php");
+                const result = await response.json();
+                
+                document.getElementById("contentResult").innerHTML = 
+                    "✅ GET Content Test:\n" + JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById("contentResult").innerHTML = 
+                    "❌ GET Content Error:\n" + error.message;
+            }
+        }
+
+        async function testContentPost() {
+            try {
+                const response = await fetch("./api/simple-content.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: "Test Content " + Date.now(),
+                        type: "text",
+                        duration: 10
+                    })
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById("contentResult").innerHTML = 
+                    "✅ POST Content Test:\n" + JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById("contentResult").innerHTML = 
+                    "❌ POST Content Error:\n" + error.message;
+            }
+        }
+
+        function openFixedPlaylist() {
+            window.open("./admin/playlist-fixed.html", "_blank");
+        }
+
+        function openOriginalPlaylist() {
+            window.open("./admin/playlist.html", "_blank");
+        }
+    </script>
+</body>
+</html>

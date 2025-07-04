@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete API Tester</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .test-section { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .test-section h3 { color: #333; margin-bottom: 15px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button.success { background: #28a745; }
+        button.error { background: #dc3545; }
+        .result { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; max-height: 300px; overflow-y: auto; font-size: 12px; }
+        .result.success { background: #d4edda; border-color: #c3e6cb; }
+        .result.error { background: #f8d7da; border-color: #f5c6cb; }
+        .status { display: inline-block; padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+        .quick-links { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .quick-links a { display: inline-block; margin: 5px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; }
+        .quick-links a:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Complete API Tester</h1>
+            <p>Test all system APIs and functionality</p>
+        </div>
+        
+        <div class="quick-links">
+            <h3>🔗 Quick Links</h3>
+            <a href="admin/playlist-fixed.html" target="_blank">📋 Playlist Manager</a>
+            <a href="admin/content-fixed.html" target="_blank">📁 Content Manager</a>
+            <a href="admin/devices-fixed.html" target="_blank">📱 Device Manager</a>
+            <a href="admin/" target="_blank">🏠 Admin Dashboard</a>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-section">
+                <h3>🎵 Playlist API <span id="playlistStatus" class="status">Testing...</span></h3>
+                <button onclick="testPlaylistGet()">GET Playlists</button>
+                <button onclick="testPlaylistPost()">POST New Playlist</button>
+                <button onclick="testPlaylistCRUD()">Full CRUD Test</button>
+                <div id="playlistResult" class="result"></div>
+            </div>
+
+            <div class="test-section">
+                <h3>📁 Content API <span id="contentStatus" class="status">Testing...</span></h3>
+                <button onclick="testContentGet()">GET Content</button>
+                <button onclick="testContentPost()">POST New Content</button>
+                <button onclick="testContentCRUD()">Full CRUD Test</button>
+                <div id="contentResult" class="result"></div>
+            </div>
+
+            <div class="test-section">
+                <h3>📱 Device API <span id="deviceStatus" class="status">Testing...</span></h3>
+                <button onclick="testDeviceGet()">GET Devices</button>
+                <button onclick="testDevicePost()">POST New Device</button>
+                <button onclick="testDeviceCRUD()">Full CRUD Test</button>
+                <div id="deviceResult" class="result"></div>
+            </div>
+
+            <div class="test-section">
+                <h3>🔄 System Health <span id="systemStatus" class="status">Checking...</span></h3>
+                <button onclick="testSystemHealth()">Full Health Check</button>
+                <button onclick="testAllEndpoints()">Test All Endpoints</button>
+                <button onclick="stressTest()">Stress Test</button>
+                <div id="systemResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = "./api/";
+        const endpoints = {
+            playlists: "simple-playlists.php",
+            content: "simple-content.php", 
+            devices: "simple-devices.php"
+        };
+
+        // Initialize
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("🧪 Complete API Tester Ready");
+            testSystemHealth();
+        });
+
+        // Update status indicator
+        function updateStatus(elementId, status, success = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = status;
+            element.className = `status ${success ? "online" : "offline"}`;
+        }
+
+        // Show result
+        function showResult(elementId, data, success = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result ${success ? "success" : "error"}`;
+        }
+
+        // Test functions
+        async function testPlaylistGet() {
+            try {
+                const response = await fetch(API_BASE + endpoints.playlists);
+                const result = await response.json();
+                
+                updateStatus("playlistStatus", "Online", true);
+                showResult("playlistResult", {
+                    test: "GET Playlists",
+                    status: "SUCCESS",
+                    data: result
+                }, true);
+                
+            } catch (error) {
+                updateStatus("playlistStatus", "Error", false);
+                showResult("playlistResult", {
+                    test: "GET Playlists",
+                    status: "ERROR",
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testPlaylistPost() {
+            try {
+                const testData = {
+                    name: "API Test Playlist " + Date.now(),
+                    description: "Created by API tester",
+                    items: []
+                };
+                
+                const response = await fetch(API_BASE + endpoints.playlists, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                showResult("playlistResult", {
+                    test: "POST Playlist",
+                    status: "SUCCESS",
+                    sent: testData,
+                    received: result
+                }, true);
+                
+            } catch (error) {
+                showResult("playlistResult", {
+                    test: "POST Playlist",
+                    status: "ERROR",
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testContentGet() {
+            try {
+                const response = await fetch(API_BASE + endpoints.content);
+                const result = await response.json();
+                
+                updateStatus("contentStatus", "Online", true);
+                showResult("contentResult", {
+                    test: "GET Content",
+                    status: "SUCCESS",
+                    data: result
+                }, true);
+                
+            } catch (error) {
+                updateStatus("contentStatus", "Error", false);
+                showResult("contentResult", {
+                    test: "GET Content",
+                    status: "ERROR",
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testContentPost() {
+            try {
+                const testData = {
+                    title: "API Test Content " + Date.now(),
+                    type: "text",
+                    duration: 10
+                };
+                
+                const response = await fetch(API_BASE + endpoints.content, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                showResult("contentResult", {
+                    test: "POST Content",
+                    status: "SUCCESS",
+                    sent: testData,
+                    received: result
+                }, true);
+                
+            } catch (error) {
+                showResult("contentResult", {
+                    test: "POST Content", 
+                    status: "ERROR",
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testDeviceGet() {
+            try {
+                const response = await fetch(API_BASE + endpoints.devices);
+                const result = await response.json();
+                
+                updateStatus("deviceStatus", "Online", true);
+                showResult("deviceResult", {
+                    test: "GET Devices",
+                    status: "SUCCESS",
+                    data: result
+                }, true);
+                
+            } catch (error) {
+                updateStatus("deviceStatus", "Error", false);
+                showResult("deviceResult", {
+                    test: "GET Devices",
+                    status: "ERROR",
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testDevicePost() {
+            try {
+                const testData = {
+                    name: "API Test Device " + Date.now(),
+                    device_id: "TEST" + Date.now(),
+                    location: "Test Location"
+                };
+                
+                const response = await fetch(API_BASE + endpoints.devices, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                showResult("deviceResult", {
+                    test: "POST Device",
+                    status: "SUCCESS",
+                    sent: testData,
+                    received: result
+                }, true);
+                
+            } catch (error) {
+                showResult("deviceResult", {
+                    test: "POST Device",
+                    status: "ERROR", 
+                    error: error.message
+                }, false);
+            }
+        }
+
+        async function testSystemHealth() {
+            const results = {
+                timestamp: new Date().toISOString(),
+                tests: []
+            };
+
+            // Test all endpoints
+            for (const [name, endpoint] of Object.entries(endpoints)) {
+                try {
+                    const start = Date.now();
+                    const response = await fetch(API_BASE + endpoint);
+                    const end = Date.now();
+                    const result = await response.json();
+                    
+                    results.tests.push({
+                        endpoint: name,
+                        status: "SUCCESS",
+                        responseTime: end - start + "ms",
+                        httpStatus: response.status,
+                        success: result.success
+                    });
+                    
+                } catch (error) {
+                    results.tests.push({
+                        endpoint: name,
+                        status: "ERROR",
+                        error: error.message
+                    });
+                }
+            }
+            
+            const allSuccess = results.tests.every(test => test.status === "SUCCESS");
+            updateStatus("systemStatus", allSuccess ? "Healthy" : "Issues", allSuccess);
+            
+            showResult("systemResult", {
+                test: "System Health Check",
+                overall: allSuccess ? "HEALTHY" : "ISSUES DETECTED",
+                results: results
+            }, allSuccess);
+        }
+
+        async function testAllEndpoints() {
+            console.log("Testing all endpoints...");
+            await testPlaylistGet();
+            await testContentGet(); 
+            await testDeviceGet();
+            await testSystemHealth();
+        }
+
+        async function stressTest() {
+            const stressResults = [];
+            const iterations = 10;
+            
+            showResult("systemResult", "Running stress test...", true);
+            
+            for (let i = 0; i < iterations; i++) {
+                const start = Date.now();
+                
+                try {
+                    const responses = await Promise.all([
+                        fetch(API_BASE + endpoints.playlists),
+                        fetch(API_BASE + endpoints.content),
+                        fetch(API_BASE + endpoints.devices)
+                    ]);
+                    
+                    const end = Date.now();
+                    const allOk = responses.every(r => r.ok);
+                    
+                    stressResults.push({
+                        iteration: i + 1,
+                        success: allOk,
+                        responseTime: end - start + "ms"
+                    });
+                    
+                } catch (error) {
+                    stressResults.push({
+                        iteration: i + 1,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            const successRate = (stressResults.filter(r => r.success).length / iterations * 100).toFixed(1);
+            const avgResponseTime = stressResults
+                .filter(r => r.responseTime)
+                .reduce((acc, r) => acc + parseInt(r.responseTime), 0) / stressResults.length;
+            
+            showResult("systemResult", {
+                test: "Stress Test",
+                iterations: iterations,
+                successRate: successRate + "%",
+                averageResponseTime: avgResponseTime.toFixed(0) + "ms",
+                results: stressResults
+            }, successRate > 80);
+        }
+
+        // CRUD test functions
+        async function testPlaylistCRUD() {
+            const crudResults = [];
+            
+            // CREATE
+            try {
+                const createData = {
+                    name: "CRUD Test Playlist " + Date.now(),
+                    description: "Testing CRUD operations"
+                };
+                
+                const createResponse = await fetch(API_BASE + endpoints.playlists, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(createData)
+                });
+                
+                const createResult = await createResponse.json();
+                crudResults.push({
+                    operation: "CREATE",
+                    status: createResult.success ? "SUCCESS" : "FAILED",
+                    data: createResult
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "CREATE",
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            // READ
+            try {
+                const readResponse = await fetch(API_BASE + endpoints.playlists);
+                const readResult = await readResponse.json();
+                crudResults.push({
+                    operation: "READ",
+                    status: readResult.success ? "SUCCESS" : "FAILED",
+                    count: readResult.data?.playlists?.length || 0
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "READ",
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            showResult("playlistResult", {
+                test: "Playlist CRUD Test",
+                results: crudResults
+            }, crudResults.every(r => r.status === "SUCCESS"));
+        }
+
+        async function testContentCRUD() {
+            const crudResults = [];
+            
+            // CREATE
+            try {
+                const createData = {
+                    title: "CRUD Test Content " + Date.now(),
+                    type: "text",
+                    duration: 5
+                };
+                
+                const createResponse = await fetch(API_BASE + endpoints.content, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(createData)
+                });
+                
+                const createResult = await createResponse.json();
+                crudResults.push({
+                    operation: "CREATE",
+                    status: createResult.success ? "SUCCESS" : "FAILED",
+                    data: createResult
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "CREATE", 
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            // READ
+            try {
+                const readResponse = await fetch(API_BASE + endpoints.content);
+                const readResult = await readResponse.json();
+                crudResults.push({
+                    operation: "READ",
+                    status: readResult.success ? "SUCCESS" : "FAILED",
+                    count: readResult.data?.content?.length || 0
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "READ",
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            showResult("contentResult", {
+                test: "Content CRUD Test",
+                results: crudResults
+            }, crudResults.every(r => r.status === "SUCCESS"));
+        }
+
+        async function testDeviceCRUD() {
+            const crudResults = [];
+            
+            // CREATE
+            try {
+                const createData = {
+                    name: "CRUD Test Device " + Date.now(),
+                    device_id: "CRUD" + Date.now(),
+                    location: "Test Lab"
+                };
+                
+                const createResponse = await fetch(API_BASE + endpoints.devices, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(createData)
+                });
+                
+                const createResult = await createResponse.json();
+                crudResults.push({
+                    operation: "CREATE",
+                    status: createResult.success ? "SUCCESS" : "FAILED",
+                    data: createResult
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "CREATE",
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            // READ
+            try {
+                const readResponse = await fetch(API_BASE + endpoints.devices);
+                const readResult = await readResponse.json();
+                crudResults.push({
+                    operation: "READ",
+                    status: readResult.success ? "SUCCESS" : "FAILED",
+                    count: readResult.data?.devices?.length || 0
+                });
+                
+            } catch (error) {
+                crudResults.push({
+                    operation: "READ",
+                    status: "ERROR",
+                    error: error.message
+                });
+            }
+            
+            showResult("deviceResult", {
+                test: "Device CRUD Test", 
+                results: crudResults
+            }, crudResults.every(r => r.status === "SUCCESS"));
+        }
+    </script>
+</body>
+</html>

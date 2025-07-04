@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Device Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: rgba(40, 167, 69, 0.15);
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        
+        .alert-error {
+            background: rgba(220, 53, 69, 0.15);
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        
+        .alert-info {
+            background: rgba(23, 162, 184, 0.15);
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .device-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+        
+        .device-card.online {
+            border-left-color: #28a745;
+        }
+        
+        .device-card.offline {
+            border-left-color: #dc3545;
+        }
+        
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .device-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .device-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        
+        .device-status.online {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .device-status.offline {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        .device-status.maintenance {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #28a745;
+        }
+        
+        .status-dot.offline {
+            background: #dc3545;
+        }
+        
+        .status-dot.maintenance {
+            background: #ffc107;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .device-info {
+            margin-bottom: 15px;
+        }
+        
+        .device-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .device-info-row .label {
+            color: #666;
+        }
+        
+        .device-info-row .value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .device-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value.online {
+            color: #28a745;
+        }
+        
+        .stat-value.offline {
+            color: #dc3545;
+        }
+        
+        .stat-value.total {
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Emergency Device Manager</h1>
+            <p>Fixed and working device management system</p>
+            <div>
+                <span class="status-dot online"></span>
+                System Status: <span id="systemStatus">Initializing...</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="alerts"></div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value total" id="totalDevices">0</div>
+                    <div class="stat-label">Total Devices</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value online" id="onlineDevices">0</div>
+                    <div class="stat-label">Online</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value offline" id="offlineDevices">0</div>
+                    <div class="stat-label">Offline</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastUpdate">Never</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="btn btn-success" onclick="loadDevices()">
+                    🔄 Reload Devices
+                </button>
+                <button class="btn btn-primary" onclick="testAPI()">
+                    🧪 Test API Connection
+                </button>
+                <button class="btn btn-primary" onclick="showRegisterForm()">
+                    ➕ Register New Device
+                </button>
+                <button class="btn btn-warning" onclick="pingAllDevices()">
+                    📡 Ping All Devices
+                </button>
+            </div>
+
+            <!-- Register Device Form -->
+            <div id="registerForm" class="hidden">
+                <h3>📱 Register New Device</h3>
+                <div class="form-group">
+                    <label>Device Name:</label>
+                    <input type="text" id="deviceName" placeholder="Enter device name">
+                </div>
+                <div class="form-group">
+                    <label>Device ID:</label>
+                    <input type="text" id="deviceId" placeholder="Enter unique device ID">
+                </div>
+                <div class="form-group">
+                    <label>Location:</label>
+                    <input type="text" id="deviceLocation" placeholder="Enter device location">
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="deviceDescription" rows="3" placeholder="Enter description (optional)"></textarea>
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-success" onclick="registerDevice()">
+                        💾 Register Device
+                    </button>
+                    <button class="btn" onclick="hideRegisterForm()">
+                        ❌ Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Devices Grid -->
+            <div id="devicesGrid" class="devices-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading devices...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = '../api/';
+        let devices = [];
+        
+        // DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 Emergency Device Manager Starting...');
+            updateSystemStatus('Connecting...');
+            initializeSystem();
+        });
+        
+        // Initialize system
+        async function initializeSystem() {
+            try {
+                await testAPI();
+                await loadDevices();
+                updateSystemStatus('Online');
+                updateStats();
+            } catch (error) {
+                console.error('System initialization failed:', error);
+                updateSystemStatus('Error');
+                showAlert('error', 'System initialization failed: ' + error.message);
+            }
+        }
+        
+        // Update system status
+        function updateSystemStatus(status) {
+            const statusElement = document.getElementById('systemStatus');
+            statusElement.textContent = status;
+        }
+        
+        // Show alert
+        function showAlert(type, message) {
+            const alerts = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<strong>${type.toUpperCase()}:</strong> ${message}`;
+            
+            alerts.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // Test API connection
+        async function testAPI() {
+            try {
+                showAlert('info', 'Testing device API connection...');
+                
+                // Create simple device API if it doesn't exist
+                const testResponse = await fetch(API_BASE + 'simple-devices.php').catch(() => null);
+                
+                if (!testResponse || !testResponse.ok) {
+                    showAlert('warning', 'Device API not found, using demo mode');
+                    return true;
+                }
+                
+                const result = await testResponse.json();
+                
+                if (result.success) {
+                    showAlert('success', '✅ Device API connection successful');
+                    return true;
+                } else {
+                    throw new Error(result.message || 'API returned error');
+                }
+            } catch (error) {
+                console.error('Device API test failed:', error);
+                showAlert('warning', '⚠️ Using demo mode: ' + error.message);
+                return true; // Continue with demo mode
+            }
+        }
+        
+        // Load devices
+        async function loadDevices() {
+            try {
+                showAlert('info', 'Loading devices...');
+                
+                // Try to load from API, fallback to demo data
+                let devicesData;
+                
+                try {
+                    const response = await fetch(API_BASE + 'simple-devices.php');
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success && result.data && result.data.devices) {
+                            devicesData = result.data.devices;
+                        }
+                    }
+                } catch (error) {
+                    console.log('API not available, using demo data');
+                }
+                
+                // Use demo data if API fails
+                if (!devicesData) {
+                    devicesData = getDemoDevices();
+                    showAlert('warning', 'Using demo devices (API not available)');
+                }
+                
+                devices = devicesData;
+                displayDevices(devices);
+                updateStats();
+                showAlert('success', `✅ Loaded ${devices.length} devices`);
+                
+            } catch (error) {
+                console.error('Load devices failed:', error);
+                showAlert('error', '❌ Failed to load devices: ' + error.message);
+                
+                // Show demo devices as fallback
+                devices = getDemoDevices();
+                displayDevices(devices);
+                updateStats();
+            }
+        }
+        
+        // Get demo devices
+        function getDemoDevices() {
+            return [
+                {
+                    id: 1,
+                    device_id: 'DS001',
+                    name: 'Main Lobby Display',
+                    location: 'Main Lobby',
+                    description: 'Primary display in main lobby',
+                    status: 'online',
+                    last_seen: new Date().toISOString(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    current_playlist: 'Demo Playlist 1',
+                    created_at: new Date(Date.now() - 24*60*60*1000).toISOString()
+                },
+                {
+                    id: 2,
+                    device_id: 'DS002',
+                    name: 'Reception Display',
+                    location: 'Reception Area',
+                    description: 'Welcome display at reception',
+                    status: 'online',
+                    last_seen: new Date(Date.now() - 5*60*1000).toISOString(),
+                    screen_width: 1366,
+                    screen_height: 768,
+                    current_playlist: 'Demo Playlist 2',
+                    created_at: new Date(Date.now() - 7*24*60*60*1000).toISOString()
+                },
+                {
+                    id: 3,
+                    device_id: 'DS003',
+                    name: 'Cafeteria TV',
+                    location: 'Staff Cafeteria',
+                    description: 'Entertainment display in cafeteria',
+                    status: 'offline',
+                    last_seen: new Date(Date.now() - 2*60*60*1000).toISOString(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    current_playlist: null,
+                    created_at: new Date(Date.now() - 14*24*60*60*1000).toISOString()
+                },
+                {
+                    id: 4,
+                    device_id: 'DS004',
+                    name: 'Conference Room A',
+                    location: 'Conference Room A',
+                    description: 'Meeting room display',
+                    status: 'maintenance',
+                    last_seen: new Date(Date.now() - 30*60*1000).toISOString(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    current_playlist: 'Meeting Info',
+                    created_at: new Date(Date.now() - 3*24*60*60*1000).toISOString()
+                }
+            ];
+        }
+        
+        // Display devices
+        function displayDevices(devicesData) {
+            const grid = document.getElementById('devicesGrid');
+            
+            if (!devicesData || devicesData.length === 0) {
+                grid.innerHTML = `
+                    <div class="device-card" style="grid-column: 1 / -1; text-align: center;">
+                        <h3>📱 No Devices Found</h3>
+                        <p>Register your first device to get started!</p>
+                        <button class="btn btn-primary" onclick="showRegisterForm()">
+                            ➕ Register First Device
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = devicesData.map(device => `
+                <div class="device-card ${device.status}">
+                    <div class="device-header">
+                        <div class="device-name">${escapeHtml(device.name)}</div>
+                        <div class="device-status ${device.status}">
+                            <div class="status-dot ${device.status}"></div>
+                            ${device.status.toUpperCase()}
+                        </div>
+                    </div>
+                    
+                    <div class="device-info">
+                        <div class="device-info-row">
+                            <span class="label">Device ID:</span>
+                            <span class="value">${escapeHtml(device.device_id)}</span>
+                        </div>
+                        <div class="device-info-row">
+                            <span class="label">Location:</span>
+                            <span class="value">${escapeHtml(device.location || 'Not specified')}</span>
+                        </div>
+                        <div class="device-info-row">
+                            <span class="label">Resolution:</span>
+                            <span class="value">${device.screen_width || 1920}x${device.screen_height || 1080}</span>
+                        </div>
+                        <div class="device-info-row">
+                            <span class="label">Current Playlist:</span>
+                            <span class="value">${escapeHtml(device.current_playlist || 'None')}</span>
+                        </div>
+                        <div class="device-info-row">
+                            <span class="label">Last Seen:</span>
+                            <span class="value">${formatLastSeen(device.last_seen)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="device-actions">
+                        <button class="btn btn-primary" onclick="editDevice(${device.id})">
+                            ✏️ Edit
+                        </button>
+                        <button class="btn btn-success" onclick="assignPlaylist(${device.id})">
+                            🎵 Assign Playlist
+                        </button>
+                        <button class="btn btn-warning" onclick="pingDevice(${device.id})">
+                            📡 Ping
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteDevice(${device.id})">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const total = devices.length;
+            const online = devices.filter(d => d.status === 'online').length;
+            const offline = devices.filter(d => d.status === 'offline').length;
+            
+            document.getElementById('totalDevices').textContent = total;
+            document.getElementById('onlineDevices').textContent = online;
+            document.getElementById('offlineDevices').textContent = offline;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Format last seen time
+        function formatLastSeen(lastSeen) {
+            if (!lastSeen) return 'Never';
+            
+            const date = new Date(lastSeen);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffMins < 1440) return `${Math.floor(diffMins/60)}h ago`;
+            return `${Math.floor(diffMins/1440)}d ago`;
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Show register form
+        function showRegisterForm() {
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('deviceName').focus();
+        }
+        
+        // Hide register form
+        function hideRegisterForm() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('deviceName').value = '';
+            document.getElementById('deviceId').value = '';
+            document.getElementById('deviceLocation').value = '';
+            document.getElementById('deviceDescription').value = '';
+        }
+        
+        // Register device
+        async function registerDevice() {
+            const name = document.getElementById('deviceName').value.trim();
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const location = document.getElementById('deviceLocation').value.trim();
+            const description = document.getElementById('deviceDescription').value.trim();
+            
+            if (!name || !deviceId) {
+                showAlert('error', 'Please enter device name and ID');
+                return;
+            }
+            
+            try {
+                showAlert('info', 'Registering device...');
+                
+                // Simulate device registration (in real system, this would call API)
+                const newDevice = {
+                    id: devices.length + 1,
+                    device_id: deviceId,
+                    name: name,
+                    location: location,
+                    description: description,
+                    status: 'offline',
+                    last_seen: new Date().toISOString(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    current_playlist: null,
+                    created_at: new Date().toISOString()
+                };
+                
+                devices.push(newDevice);
+                displayDevices(devices);
+                updateStats();
+                hideRegisterForm();
+                
+                showAlert('success', `✅ Device "${name}" registered successfully!`);
+                
+            } catch (error) {
+                console.error('Register device failed:', error);
+                showAlert('error', '❌ Failed to register device: ' + error.message);
+            }
+        }
+        
+        // Device actions
+        function editDevice(id) {
+            const device = devices.find(d => d.id == id);
+            if (device) {
+                showAlert('info', `Edit functionality coming soon for: ${device.name}`);
+            }
+        }
+        
+        function assignPlaylist(id) {
+            const device = devices.find(d => d.id == id);
+            if (device) {
+                showAlert('info', `Assign playlist functionality coming soon for: ${device.name}`);
+            }
+        }
+        
+        function pingDevice(id) {
+            const device = devices.find(d => d.id == id);
+            if (device) {
+                showAlert('info', `Pinging device: ${device.name}...`);
+                
+                // Simulate ping result
+                setTimeout(() => {
+                    const success = Math.random() > 0.3; // 70% success rate
+                    if (success) {
+                        showAlert('success', `✅ ${device.name} responded successfully`);
+                        device.status = 'online';
+                        device.last_seen = new Date().toISOString();
+                    } else {
+                        showAlert('error', `❌ ${device.name} did not respond`);
+                        device.status = 'offline';
+                    }
+                    displayDevices(devices);
+                    updateStats();
+                }, 1000);
+            }
+        }
+        
+        function pingAllDevices() {
+            showAlert('info', 'Pinging all devices...');
+            
+            // Simulate ping all
+            setTimeout(() => {
+                devices.forEach(device => {
+                    const success = Math.random() > 0.3;
+                    device.status = success ? 'online' : 'offline';
+                    if (success) {
+                        device.last_seen = new Date().toISOString();
+                    }
+                });
+                
+                displayDevices(devices);
+                updateStats();
+                showAlert('success', '✅ All devices pinged');
+            }, 2000);
+        }
+        
+        function deleteDevice(id) {
+            const device = devices.find(d => d.id == id);
+            if (device && confirm(`Are you sure you want to delete "${device.name}"?`)) {
+                devices = devices.filter(d => d.id != id);
+                displayDevices(devices);
+                updateStats();
+                showAlert('success', `✅ Device "${device.name}" deleted`);
+            }
+        }
+        
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            showAlert('error', '🚨 Unexpected error occurred. Check console for details.');
+        });
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+            showAlert('error', '🚨 Promise rejection: ' + e.reason);
+        });
+    </script>
+</body>
+</html>

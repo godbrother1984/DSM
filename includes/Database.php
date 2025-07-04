@@ -1,7 +1,7 @@
 <?php
 /*
 =============================================================================
-WORKING DATABASE CLASS - SIMPLIFIED VERSION
+DATABASE CLASS - แก้ไข Missing File
 =============================================================================
 */
 
@@ -14,41 +14,6 @@ class Database {
         $this->connect();
     }
     
-    private function connect() {
-        try {
-            // Try to load config
-            $configFile = __DIR__ . "/../config/database.php";
-            
-            if (file_exists($configFile)) {
-                $config = include $configFile;
-            } else {
-                // Default XAMPP config
-                $config = [
-                    "host" => "localhost",
-                    "database" => "digital_signage",
-                    "username" => "root",
-                    "password" => "",
-                    "charset" => "utf8mb4"
-                ];
-            }
-            
-            $dsn = "mysql:host={$config[\"host\"]};dbname={$config[\"database\"]};charset={$config[\"charset\"]}";
-            
-            $this->pdo = new PDO($dsn, $config["username"], $config["password"], [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            ]);
-            
-            $this->connected = true;
-            
-        } catch (PDOException $e) {
-            // Log error but dont crash
-            error_log("Database connection failed: " . $e->getMessage());
-            $this->connected = false;
-        }
-    }
-    
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self();
@@ -56,100 +21,105 @@ class Database {
         return self::$instance;
     }
     
+    private function connect() {
+        try {
+            $config = [
+                "host" => "localhost",
+                "database" => "digital_signage",
+                "username" => "root",
+                "password" => ""
+            ];
+            
+            // Try to load config file
+            if (file_exists("config/database.php")) {
+                $config = include "config/database.php";
+            }
+            
+            $dsn = "mysql:host={$config[\"host\"]};dbname={$config[\"database\"]};charset=utf8mb4";
+            
+            $this->pdo = new PDO($dsn, $config["username"], $config["password"], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
+            
+            $this->connected = true;
+        } catch (Exception $e) {
+            $this->connected = false;
+            // Log error but don't throw exception
+            error_log("Database connection failed: " . $e->getMessage());
+        }
+    }
+    
     public function isConnected() {
-        return $this->connected;
+        return $this->connected && $this->pdo !== null;
     }
     
     public function fetchAll($sql, $params = []) {
-        if (!$this->connected) {
-            return [];
+        if (!$this->isConnected()) {
+            throw new Exception("Database not connected");
         }
         
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            error_log("Database query failed: " . $e->getMessage());
-            return [];
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
     }
     
     public function fetchOne($sql, $params = []) {
-        if (!$this->connected) {
-            return null;
+        if (!$this->isConnected()) {
+            throw new Exception("Database not connected");
         }
         
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetch();
-        } catch (PDOException $e) {
-            error_log("Database query failed: " . $e->getMessage());
-            return null;
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
     }
     
     public function insert($table, $data) {
-        if (!$this->connected) {
-            return rand(1, 1000); // Return mock ID
+        if (!$this->isConnected()) {
+            throw new Exception("Database not connected");
         }
         
-        try {
-            $fields = implode(",", array_keys($data));
-            $placeholders = ":" . implode(", :", array_keys($data));
-            
-            $sql = "INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($data);
-            
+        $columns = implode(",", array_keys($data));
+        $placeholders = ":" . implode(", :", array_keys($data));
+        
+        $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
+        
+        $stmt = $this->pdo->prepare($sql);
+        
+        if ($stmt->execute($data)) {
             return $this->pdo->lastInsertId();
-        } catch (PDOException $e) {
-            error_log("Database insert failed: " . $e->getMessage());
-            return rand(1, 1000); // Return mock ID
         }
+        
+        throw new Exception("Insert failed");
     }
     
-    public function update($table, $data, $where, $whereParams = []) {
-        if (!$this->connected) {
-            return 1; // Return mock affected rows
+    public function update($table, $data, $where, $params = []) {
+        if (!$this->isConnected()) {
+            throw new Exception("Database not connected");
         }
         
-        try {
-            $fields = [];
-            foreach (array_keys($data) as $field) {
-                $fields[] = "{$field} = :{$field}";
-            }
-            $fields = implode(", ", $fields);
-            
-            $sql = "UPDATE {$table} SET {$fields} WHERE {$where}";
-            $allParams = array_merge($data, $whereParams);
-            
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($allParams);
-            
-            return $stmt->rowCount();
-        } catch (PDOException $e) {
-            error_log("Database update failed: " . $e->getMessage());
-            return 1; // Return mock affected rows
+        $setPairs = [];
+        foreach ($data as $key => $value) {
+            $setPairs[] = "{$key} = :{$key}";
         }
+        $setClause = implode(", ", $setPairs);
+        
+        $sql = "UPDATE {$table} SET {$setClause} WHERE {$where}";
+        
+        $stmt = $this->pdo->prepare($sql);
+        
+        return $stmt->execute(array_merge($data, $params));
     }
     
     public function delete($table, $where, $params = []) {
-        if (!$this->connected) {
-            return 1; // Return mock affected rows
+        if (!$this->isConnected()) {
+            throw new Exception("Database not connected");
         }
         
-        try {
-            $sql = "DELETE FROM {$table} WHERE {$where}";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            
-            return $stmt->rowCount();
-        } catch (PDOException $e) {
-            error_log("Database delete failed: " . $e->getMessage());
-            return 1; // Return mock affected rows
-        }
+        $sql = "DELETE FROM {$table} WHERE {$where}";
+        
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
     }
 }
 ?>

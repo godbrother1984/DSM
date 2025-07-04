@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Signage Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 3em; color: #333; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.2em; }
+        .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .module { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 30px; text-align: center; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .module:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .module-icon { font-size: 4em; margin-bottom: 20px; }
+        .module h3 { color: #333; margin-bottom: 15px; font-size: 1.5em; }
+        .module p { color: #666; margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+        .status { margin-top: 30px; text-align: center; }
+        .status-online { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎛️ Digital Signage Admin</h1>
+            <p>Complete Management System</p>
+            <div class="status">
+                System Status: <span class="status-online">Online & Ready</span>
+            </div>
+        </div>
+        
+        <div class="modules">
+            <div class="module">
+                <div class="module-icon">🎵</div>
+                <h3>Playlist Management</h3>
+                <p>Create and manage content playlists for your displays</p>
+                <a href="playlist-fixed.html" class="btn">Manage Playlists</a>
+            </div>
+            
+            <div class="module">
+                <div class="module-icon">📁</div>
+                <h3>Content Management</h3>
+                <p>Upload and organize your media content</p>
+                <a href="content-fixed.html" class="btn">Manage Content</a>
+            </div>
+            
+            <div class="module">
+                <div class="module-icon">📱</div>
+                <h3>Device Management</h3>
+                <p>Monitor and control your digital signage devices</p>
+                <a href="devices-fixed.html" class="btn">Manage Devices</a>
+            </div>
+            
+            <div class="module">
+                <div class="module-icon">📊</div>
+                <h3>Analytics</h3>
+                <p>View usage statistics and system reports</p>
+                <a href="analytics-fixed.html" class="btn">View Analytics</a>
+            </div>
+            
+            <div class="module">
+                <div class="module-icon">🧪</div>
+                <h3>API Testing</h3>
+                <p>Test and debug API endpoints</p>
+                <a href="../api-test-complete.html" class="btn">API Tester</a>
+            </div>
+            
+            <div class="module">
+                <div class="module-icon">⚙️</div>
+                <h3>System Settings</h3>
+                <p>Configure system settings and preferences</p>
+                <a href="settings-fixed.html" class="btn">Settings</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
